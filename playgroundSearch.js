@@ -2,14 +2,14 @@
 //http://stackoverflow.com/questions/7837456/how-to-compare-arrays-in-javascript
 var regex = /^(-*\d+)[ \t](-*\d+)$/;
 var start = new Date().getTime();
-var lastLineMatch = ['','','','',index=0, input=''];
-var currentLineMatch = [];
+var lastVector = ['','','','',index=0, input=''];
+var currentVector = [];
 var waitForRangeEnd = false;
 var fs = require('fs');
     
 
 var lineCntr = 0
-	,possibleSquaresArrayLevel1 = []
+	,eqLengthVectors = []
 	;
 
 var lineReader = require('readline').createInterface({
@@ -18,32 +18,25 @@ var lineReader = require('readline').createInterface({
 });
 
 lineReader.on('line', function (lineContent) {
-	lineCntr++;
-	//console.log(lastLineMatch);
+	lineCntr++;//will use for "addPoint"
 	
-	if(currentLineMatch = /^(\d+.*\d*) (-*\d+,-*\d+) (-*\d+,-*\d+)$/.exec(lineContent)){
-		if(lastLineMatch[1] == currentLineMatch[1]){//TODO: only vectors of 2 cucambers in length
+	if(currentVector = /^(\d+.*\d*) (-*\d+,-*\d+) (-*\d+,-*\d+)$/.exec(lineContent)){
+		if(lastVector[1] == currentVector[1]){//TODO: only vectors of 2 cucambers in length
 			waitForRangeEnd = true;
-			//possibleSquaresArrayLevel1.push(lastLineMatch);
-			possibleSquaresArrayLevel1.push({
-												p1 : lastLineMatch[2],
-												p2 : lastLineMatch[3]
-											});
+			//eqLengthVectors.push(lastVector);
+			eqLengthVectors.push({ p1 : lastVector[2], p2 : lastVector[3] });
 		}else if(waitForRangeEnd){
 			waitForRangeEnd = false;
-			//possibleSquaresArrayLevel1.push(lastLineMatch);
-			possibleSquaresArrayLevel1.push({
-												p1 : lastLineMatch[2],
-												p2 : lastLineMatch[3]
-											});
+			eqLengthVectors.push({ p1 : lastVector[2], p2 : lastVector[3] });
 
-			if(possibleSquaresArrayLevel1.length > 3){//TODO easy to add 4-th point recommendation
-				searchSquaresL2( possibleSquaresArrayLevel1 );
+			if(eqLengthVectors.length > 3){//TODO easy to add 4-th point recommendation
+				
+				searchConnectedVectors( eqLengthVectors );//Add to the queue
+
 			}
-			
-			possibleSquaresArrayLevel1 = new Array();
+			eqLengthVectors = new Array();
 		}
-		lastLineMatch = currentLineMatch;
+		lastVector = currentVector;
 	}
  
 	if(lineCntr>100000000){//TODO: remove 
@@ -51,64 +44,42 @@ lineReader.on('line', function (lineContent) {
 	};
 });
 
-function searchSquaresL2 (vectorArrays){
+function searchConnectedVectors (vectorArrays){
 	//console.log(vectorArrays);
 	//TODO: possible memory eating Godzilla, implement "file buffering"
-	var possibleSquaresArrayLevel2 = new Array();
+	var connectedVectors = new Array();
 	for(var i=vectorArrays.length-1; i>=0; i--){
 		for (var j = i - 1; j >= 0; j--) {
-			if( chkVectorsConnected( vectorArrays[i], vectorArrays[j] ) ){
-				possibleSquaresArrayLevel2.push( vectorSumPoints( vectorArrays[i], vectorArrays[j] ) );
-			  /*possibleSquaresArrayLevel1[i][2] == possibleSquaresArrayLevel1[j][2] ||
-				possibleSquaresArrayLevel1[i][2] == possibleSquaresArrayLevel1[j][3] ||
-				possibleSquaresArrayLevel1[i][3] == possibleSquaresArrayLevel1[j][3] ||
-				possibleSquaresArrayLevel1[i][3] == possibleSquaresArrayLevel1[j][2])
-			
-				possibleSquaresArrayLevel2.push([
-												  [ possibleSquaresArrayLevel1[i][2], possibleSquaresArrayLevel1[i][3] ],
-												  [ possibleSquaresArrayLevel1[j][2], possibleSquaresArrayLevel1[j][3] ]
-												 ]);*/
-				/*possibleSquaresArrayLevel2.push([ possibleSquaresArrayLevel1[i],
-												  possibleSquaresArrayLevel1[j] ]);
-*/
-				//possibleSquaresArrayLevel2.push(possibleSquaresArrayLevel1[j])
-
+			if( areVectorsConnected( vectorArrays[i], vectorArrays[j] ) ){
+				connectedVectors.push( vectorSumPoints( vectorArrays[i], vectorArrays[j] ) );
 			}
 		};
 	}
-	//console.log(possibleSquaresArrayLevel2);
-	for (var i = possibleSquaresArrayLevel2.length - 1; i >= 0; i--) {
-		for (var j = i - 1; j >= 0; j--) {
-			if(chkVectorsConnected( { 
-										p1 : possibleSquaresArrayLevel2[i].p1,
-										p2 : possibleSquaresArrayLevel2[i].p3
-									},{
-										p1 : possibleSquaresArrayLevel2[j].p1,
-										p2 : possibleSquaresArrayLevel2[j].p3
-									})){
-				var possibleSquaresArrayLevel3 = [];
-				possibleSquaresArrayLevel3[possibleSquaresArrayLevel2[i].p1] = 0;
-				possibleSquaresArrayLevel3[possibleSquaresArrayLevel2[i].p2] = 0;
-				possibleSquaresArrayLevel3[possibleSquaresArrayLevel2[i].p3] = 0;
-				possibleSquaresArrayLevel3[possibleSquaresArrayLevel2[j].p1] = 0;
-				possibleSquaresArrayLevel3[possibleSquaresArrayLevel2[j].p2] = 0;
-				possibleSquaresArrayLevel3[possibleSquaresArrayLevel2[j].p3] = 0;
-				console.log('holy grail points\n-------------');
-				for(var key in possibleSquaresArrayLevel3){
-					console.log(key);
+	if(connectedVectors.length > 2){
+		for (var i = connectedVectors.length - 1; i >= 0; i--) {
+			for (var j = i - 1; j >= 0; j--) {
+				if(isRectangle( connectedVectors[i], connectedVectors[j] )){
+
+					
+					var possibleSquaresArrayLevel3 = [];
+					possibleSquaresArrayLevel3[connectedVectors[i].p1] = 0;
+					possibleSquaresArrayLevel3[connectedVectors[i].p2] = 0;
+					possibleSquaresArrayLevel3[connectedVectors[i].p3] = 0;
+					possibleSquaresArrayLevel3[connectedVectors[j].p1] = 0;
+					possibleSquaresArrayLevel3[connectedVectors[j].p2] = 0;
+					possibleSquaresArrayLevel3[connectedVectors[j].p3] = 0;
+
+					if(isSquare(possibleSquaresArrayLevel3)){
+						console.log('holy grail points\n-------------');
+						for(var key in possibleSquaresArrayLevel3){
+							console.log(key);
+						};
+						console.log('-------------');
+					}
 				};
-				console.log('-------------');
-			}
-			/*if(possibleSquaresArrayLevel2[i].equals( possibleSquaresArrayLevel2[j].reverse() )){
-				console.log('HOLY GRAIL!!!', possibleSquaresArrayLevel2[i], possibleSquaresArrayLevel2[j], '___');
-			}*/
+			};
 		};
 	};
-	if(possibleSquaresArrayLevel2.length > 0){
-		//console.log(possibleSquaresArrayLevel2, '.......');
-
-	}
-
 }
  /* Returns an array of 3 points. middle point is an interconnection between two suplied vectors
  1-st and 3-rd point are "path" start and end points. This is not a real vector sum function, that
@@ -138,7 +109,7 @@ function vectorSumPoints(v1,v2){
 	return(r);
 	
 }
-function chkVectorsConnected(v1, v2){
+function areVectorsConnected(v1, v2){
 
 /*	if( v1[2] == v2[2] || v1[2] == v2[3] ||
 		v1[3] == v2[2] || v1[3] == v2[2]){*/
@@ -151,6 +122,46 @@ function chkVectorsConnected(v1, v2){
 		//console.log('chkVectorsConnected FALSE\n %s \n %s', v1.p1+'\t'+v1.p2, v2.p1+'\t'+v2.p2);
 		return false;
 	}
+}
+function isRectangle(v1, v2){
+	//console.log('isRectangle ',v1, v2);
+	if( v1.p1 == v2.p1 && v1.p3 == v2.p3 ||
+		v1.p1 == v2.p3 && v1.p3 == v2.p1){
+		//console.log('chkVectorsConnected TRUE\n %s \n %s', v1.p1+'\t'+v1.p2, v2.p1+'\t'+v2.p2);
+		//console.log('chkVectorsConnected TRUE\n %s \n %s', v1[2]+'\t'+v1[3], v2[2]+'\t'+v2[3]);
+		return true;
+	}else{
+		//console.log('chkVectorsConnected FALSE\n %s \n %s', v1.p1+'\t'+v1.p2, v2.p1+'\t'+v2.p2);
+		return false;
+	}
+}
+
+function isSquare(pointList){
+	var result = false
+		,points = new Array
+		,point = new Array
+		,cx = 0
+		,cy = 0
+		,dd1 = 0
+		;
+
+	for(point in pointList){
+		point = /^(-*\d+),(-*\d+)$/.exec(point);
+		points.push({ x: parseInt(point[1]), y: parseInt(point[2]) });
+	};
+
+	cx = (points[0].x + points[1].x + points[2].x + points[3].x) / 4;
+	cy = (points[0].y + points[1].y + points[2].y + points[3].y) / 4;
+	dd1 = Math.pow(cx - points[0].x, 2) + Math.pow(cy - points[0].y, 2);
+
+	if( dd1 == Math.pow(cx - points[1].x, 2) + Math.pow(cy - points[1].y, 2) &&
+		dd1 == Math.pow(cx - points[2].x, 2) + Math.pow(cy - points[2].y, 2) &&
+		dd1 == Math.pow(cx - points[3].x, 2) + Math.pow(cy - points[3].y, 2) )
+	{
+		 result = true;
+	};
+	
+	return result;
 }
 
 lineReader.on('close', function(){
