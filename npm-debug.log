@@ -1,11 +1,8 @@
 0 info it worked if it ends with ok
-1 verbose cli [ '/usr/local/bin/node',
-1 verbose cli   '/usr/local/bin/npm',
-1 verbose cli   'run',
-1 verbose cli   'findRemoveDuplicates' ]
+1 verbose cli [ '/usr/local/bin/node', '/usr/local/bin/npm', 'start' ]
 2 info using npm@2.15.9
 3 info using node@v4.5.0
-4 verbose stack Error: missing script: findRemoveDuplicates
+4 verbose stack Error: missing script: start
 4 verbose stack     at run (/usr/local/lib/node_modules/npm/lib/run-script.js:142:19)
 4 verbose stack     at /usr/local/lib/node_modules/npm/lib/run-script.js:58:5
 4 verbose stack     at /usr/local/lib/node_modules/npm/node_modules/read-package-json/read-json.js:356:5
@@ -17,10 +14,10 @@
 4 verbose stack     at FSReqWrap.readFileAfterClose [as oncomplete] (fs.js:380:3)
 5 verbose cwd /Users/mindaugas/Desktop/squarePoints
 6 error Darwin 15.3.0
-7 error argv "/usr/local/bin/node" "/usr/local/bin/npm" "run" "findRemoveDuplicates"
+7 error argv "/usr/local/bin/node" "/usr/local/bin/npm" "start"
 8 error node v4.5.0
 9 error npm  v2.15.9
-10 error missing script: findRemoveDuplicates
+10 error missing script: start
 11 error If you need help, you may report this error at:
 11 error     <https://github.com/npm/npm/issues>
 12 verbose exit [ 1, true ]

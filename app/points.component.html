@@ -1,0 +1,8 @@
+<h2>Points</h2>
+<ul class="points">
+  <li *ngFor="let point of points">
+    {{point.label}}
+  <button class="delete"
+      (click)="delete(point); $event.stopPropagation()">x</button>
+  </li>
+</ul>

@@ -2,8 +2,7 @@
   "name": "squarePoints",
   "version": "0.0.1",
   "scripts": {
-    "startt": "tsc && concurrently \"npm run tsc:w\" \"npm run lite\" ",
-    "start": "tsc && concurrently \"npm run tsc:w\" ",
+    "start": "tsc && concurrently \"npm run tsc:w\" \"npm run lite\" ",
     "lite": "lite-server",
     "postinstall": "typings install",
     "tsc": "tsc",
