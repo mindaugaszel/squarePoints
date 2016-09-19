@@ -15,33 +15,47 @@ function calcVectorLengthsParallel(inArray, bufferFilePath, processes){
 		,chunkStart = 0
 		,chunkEnd = inArray.length
 		,i = 0
+		,pointsProcessed = 0
 		,workers = new Array
 		;
+var start = new Date().getTime();
 console.log(inArray.length);
 console.log(chunkSize);
-
-	var start = new Date().getTime();
-	for (i = 0; i < processes; i++) {
-		chunkStart = chunkSize*i;
-		chunkEnd = Math.min(inArray.length, chunkStart + chunkSize);
-		if((inArray.length - chunkEnd) < chunkSize/2){
-			chunkEnd = inArray.length;
+	function getPoints(){
+		pointsProcessed++;
+		return inArray.slice(pointsProcessed-1);
+	}
+		
+	for (var i = processes; i > 0; i--) {
+		var worker = cp.fork('./prepWorker');	
+		workers[i] = worker;
+	};
+	function handleMessage(task){
+		switch(task.type){
+			case 'init':
+				workers[task.id].send({type:'calc', inArray: getPoints()});
+				break;
+			case 'calc':
+				workers[task.id].send({type:'calc', inArray: getPoints()});
+				break;
 		}
-		console.log(chunkStart, chunkEnd,inArray.slice(chunkStart, chunkEnd).length)
-		
-		var worker = cp.fork('./prepWorker');
-		
-		worker.on('message', (m)=> {
-			console.log('received: %s. %dms', m, new Date().getTime() - start);
-			worker.kill();
+	}
+
+	for (var i = processes; i > 0; i--) {
+		workers[i].on('message', (m)=> {
+			//console.log('received %dms', new Date().getTime() - start);
+			console.dir(m);
+			handleMessage(m);
 		});
-		
-		worker.send({
-			inArray: inArray.slice(chunkStart, chunkEnd),
+	};
+
+	for (var i = processes; i > 0; i--) {		
+		workers[i].send({
+			type:'init',
+			id: i,
 			bufferFilePath: bufferFilePath+i
 		});
-		workers[i] = worker;
-		
+
 	};
 }
 
@@ -139,5 +153,5 @@ function handleRawFile (inFilePath, callback){
 
 
 handleRawFile('random.org.1', (er, a, o)=>{
-	calcVectorLengthsParallel(a, 'workerOutput', 2)
+	calcVectorLengthsParallel(a, 'workerOutput', 4)
 })
