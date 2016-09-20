@@ -1,10 +1,14 @@
-var fs = require('fs')
-	,writeStream = {}
-	,workerId = 0;
+const fs = require('fs')
+	,spawn = require('child_process').spawn
+	;
+var writeStream
+	,workerId = 0
+	,sortedFd
 	;
 
 function calcVectorLengths(inArray, callback){
 	var buffer = new Array
+		,writeSuccesss = true
 		,element = inArray.pop()
 		,fileEncoding = 'ascii'		
 		,i = 0
@@ -15,8 +19,10 @@ function calcVectorLengths(inArray, callback){
 					' '+ element[0] +' '+ element[1] +' '+ inArray[i][0] +' '+ inArray[i][1]);
 	};
 	
-	if(writeStream.write(buffer.join('\n')+ '\n', fileEncoding)){
+	writeSuccesss = writeStream.write(buffer.join('\n')+ '\n', fileEncoding)
+	if(writeSuccesss){
 		writeStream.once('drain', function(callback){
+			console.log('d');
 			callback();
 		});
 	}else{
@@ -63,6 +69,14 @@ process.on('message', (task)=>{
 			break;
 		case 'sort':
 			writeStream.end((task)=>{
+				sortedFd = fs.openSync('./out.log', 'w');
+				sortProcess = spawn('sort', ['-n', '-k1,1', task.sortFilePath], {stdio: ['pipe', sortedFd, 'pipe']});
+				sortProcess.on('close', (code) => {
+				  if (code !== 0) {
+				    console.log(`sortProcess process exited with code ${code}`);
+				  }
+				});
+
 				process.send({type:task.type, id: workerId, result: 'done'});
 			});
 			break;

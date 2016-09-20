@@ -23,7 +23,8 @@ console.log(inArray.length);
 console.log(chunkSize);
 	function getPoints(){
 		pointsProcessed++;
-		return inArray.slice(pointsProcessed-1);
+		console.log(pointsProcessed)
+		return inArray.slice(0,inArray.length-pointsProcessed-1);
 	}
 		
 	for (var i = processes; i > 0; i--) {
@@ -36,7 +37,11 @@ console.log(chunkSize);
 				workers[task.id].send({type:'calc', inArray: getPoints()});
 				break;
 			case 'calc':
-				workers[task.id].send({type:'calc', inArray: getPoints()});
+				if(inArray.length>0){
+					workers[task.id].send({type:'calc', inArray: getPoints()});
+				}else{
+					workers[task.id].send({type:'sort', sortFilePath: bufferFilePath+i+'sorted'});
+				}
 				break;
 		}
 	}
@@ -44,7 +49,7 @@ console.log(chunkSize);
 	for (var i = processes; i > 0; i--) {
 		workers[i].on('message', (m)=> {
 			//console.log('received %dms', new Date().getTime() - start);
-			console.dir(m);
+			//console.dir(m);
 			handleMessage(m);
 		});
 	};
@@ -153,5 +158,5 @@ function handleRawFile (inFilePath, callback){
 
 
 handleRawFile('random.org.1', (er, a, o)=>{
-	calcVectorLengthsParallel(a, 'workerOutput', 4)
+	calcVectorLengthsParallel(a, 'workerOutput', 1)
 })
