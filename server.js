@@ -44,6 +44,7 @@ app.get('/api/points', function(req, res) {
 
 app.delete('/api/points', function(req, res) {//clear all points
   points.init();
+  lists.updateCurrent(points.get());
 });
 
 app.delete('/api/points/:id', function(req, res) {//delete point by id
@@ -53,6 +54,7 @@ app.delete('/api/points/:id', function(req, res) {//delete point by id
 
 app.post('/api/points', function(req, res) {//Add/Create new point / import points list
   points.add(req.body.label); // change from label to something appropriate
+  lists.updateCurrent(points.get());
 });
 
 
@@ -64,7 +66,9 @@ app.get('/api/lists', function(req, res) {
 });
 
 app.get('/api/lists/:label', function(req, res) {
-  res.json(lists.getSaved());
+  lists.load2Current(req.params.label);
+  points.load(lists.getCurrent());
+  res.json(points.get());
 });
 
 app.delete('/api/lists/:label', function(req, res) {//delete point by id

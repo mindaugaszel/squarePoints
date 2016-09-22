@@ -23,7 +23,6 @@ pointsUtil.prototype.add = function(point){
 	if(Object.keys(this.aAsoc).length - 1 == this.a.length){
 		this.a.push(point);
 		result = true;
-		console.log('added pint', this.a);
 	}
 	return result;
 }

@@ -55,10 +55,6 @@ listsUtil.prototype.saveCurrent = function(label){
 	
 }
 
-listsUtil.prototype.dumpCurrent = function(){
-	this.data.currentList = new Array;
-}
-
 listsUtil.prototype.delete = function(label){
 	var filePath = path.format({
 								dir: this.storageDir,
