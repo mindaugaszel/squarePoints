@@ -15,6 +15,7 @@ var fs = require('fs');
 var path = require('path');
 var express = require('express');
 var bodyParser = require('body-parser');
+var busboy = require('connect-busboy');
 var app = express();
 var pUtil = require('./pointsUtil');
 var lUtil = require('./listsUtil');
@@ -29,6 +30,7 @@ app.set('port', (process.env.PORT || 3000));
 app.use('/', express.static(path.join(__dirname, 'public')));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
+app.use(busboy());
 
 app.use(function(req, res, next) {
     // Set permissive CORS header - this allows this server to be used only as
@@ -41,7 +43,9 @@ app.use(function(req, res, next) {
 app.get('/api/points', function(req, res) {
   res.json(points.get());
 });
-
+app.get('/api/points/download', function(req, res) {
+  res.json(points.get());//TODO: format to raw/txt format
+});
 app.delete('/api/points', function(req, res) {//clear all points
   points.init();
   lists.updateCurrent(points.get());
@@ -56,7 +60,9 @@ app.post('/api/points', function(req, res) {//Add/Create new point / import poin
   points.add(req.body.label); // change from label to something appropriate
   lists.updateCurrent(points.get());
 });
-
+app.post('/api/points/upload', function(req, res) {//Add/Create new point / import points list
+  //http://stackoverflow.com/questions/23691194/node-express-file-upload
+});
 
 
 
