@@ -25,6 +25,7 @@ var StoredLists = React.createClass({
     console.log(list);
   },
   render: function() {
+    console.log(this.props.data);
     var listItems = this.props.data.map(function(listItem) {
       return (
         <StoredList key={listItem} label={listItem} />
@@ -50,6 +51,34 @@ var StoredList = React.createClass({
   }
 });
 
+var ListsForm = React.createClass({
+  getInitialState: function() {
+    return {label: ''};
+  },
+  handleLabelChange: function(e) {
+    this.setState({label: e.target.value});
+  },
+  handleSubmit: function(e) {
+    e.preventDefault();
+    console.log(this.state.label.trim());
+    this.props.onListSave(this.state.label.trim());
+    this.setState({label: ''}); //TODO change to default state
+  },
+  render: function() {
+    return (
+      <form onSubmit={this.handleSubmit}>
+        <input
+          type="text"
+          placeholder="Label for the current point list"
+          value={this.state.label}
+          onChange={this.handleLabelChange}
+        />
+        <input type="submit" value="Save" onSubmit={this.handleSubmit}/>
+      </form>
+    );
+  }
+});
+
 var StoredListsBox = React.createClass({
   getInitialState: function() {
     return {data: []};
@@ -63,10 +92,38 @@ var StoredListsBox = React.createClass({
       dataType: 'json',
       cache: false,
       success: function(data) {
-        console.log(data);
         this.setState({data: data});
       }.bind(this),
       error: function(xhr, status, err) {
+        console.error(this.props.url, status, err.toString());
+      }.bind(this)
+    });
+  },
+  handleListSave: function(newListLabel){
+    var lists = this.state.data;
+    var updatedLists = lists;
+    console.log('handleListSave ',newListLabel);
+    /*for(var i in lists){
+      console.log(lists[i], newListLabel, lists[i] == newListLabel)
+      if (list[i] == newListLabel){
+        return;//TODO: show error somehow
+      }
+    }*/
+    if(lists.indexOf(newListLabel) === -1){
+      updatedLists = lists.concat(newListLabel);
+    }
+    
+    this.setState({data: updatedLists});
+    $.ajax({
+      url: this.props.url,
+      dataType: 'json',
+      type: 'POST',
+      data: {label: newListLabel},
+      success: function(data) {
+        this.setState({data: data});
+      }.bind(this),
+      error: function(xhr, status, err) {
+        this.setState({data: lists});
         console.error(this.props.url, status, err.toString());
       }.bind(this)
     });
@@ -76,7 +133,7 @@ var StoredListsBox = React.createClass({
       <div>
         <h1>Saved Lists</h1>
         <StoredLists data={this.state.data} />
-        <PointForm onPointSubmit={this.handlePointSubmit} />
+        <ListsForm onListSave={this.handleListSave} />
       </div>
     );
   }
@@ -95,6 +152,12 @@ var Point = React.createClass({
 });
 
 var CommentBox = React.createClass({
+  getInitialState: function() {
+    return {data: []};
+  },
+  componentDidMount: function() {
+    this.loadCurrentPoints();
+  },
   loadCurrentPoints: function() {
     $.ajax({
       url: this.props.url,
@@ -108,22 +171,21 @@ var CommentBox = React.createClass({
       }.bind(this)
     });
   },
-  handlePointSubmit: function(newPoint) {
+  handlePointSubmit: function(newPointLabel) {
     var points = this.state.data;
+    console.log('handlePointSubmit ',newPointLabel);
     for(var point in points){
-      console.dir(points[point]);
-      if (points[point].label == newPoint.label){
+      if (point == newPointLabel){
         return;//TODO: show error somehow
       }
     }
-    newPoint.id = newPoint.label;
-    var updatedPoints = points.concat([newPoint]);
+    var updatedPoints = points.concat([newPointLabel]);
     this.setState({data: updatedPoints});
     $.ajax({
       url: this.props.url,
       dataType: 'json',
       type: 'POST',
-      data: newPoint,
+      data: {label: newPointLabel},
       success: function(data) {
         this.setState({data: data});
       }.bind(this),
@@ -132,12 +194,6 @@ var CommentBox = React.createClass({
         console.error(this.props.url, status, err.toString());
       }.bind(this)
     });
-  },
-  getInitialState: function() {
-    return {data: []};
-  },
-  componentDidMount: function() {
-    this.loadCurrentPoints();
   },
   render: function() {
     return (
@@ -182,12 +238,13 @@ var PointForm = React.createClass({
     e.preventDefault();
     var X = this.state.X.trim();
     var Y = this.state.Y.trim();
+    console.log(X,Y);
     if (!X || !Y) {
       return;
     }
     var label = X + ' ' + Y;
 
-    this.props.onPointSubmit({label: label});
+    this.props.onPointSubmit(label);
     this.setState({X: '', Y: ''});
   },
   render: function() {
@@ -205,7 +262,7 @@ var PointForm = React.createClass({
           value={this.state.Y}
           onChange={this.handleYChange}
         />
-        <input type="submit" value="Post" />
+        <input type="submit" value="Add" onSubmit={this.handleSubmit}/>
       </form>
     );
   }

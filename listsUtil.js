@@ -46,7 +46,7 @@ listsUtil.prototype.saveCurrent = function(label){
 		id = new Date().getTime();
 		this.data.savedLists[label] = id;
 	}
-	
+	console.log(this.data.currentList);
 	fs.writeFileSync(path.format({dir: this.storageDir, base: id}),
 					 JSON.stringify(this.data.currentList, null, 2),
 					 {encoding:'utf8'});

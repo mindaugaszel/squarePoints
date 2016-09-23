@@ -77,7 +77,10 @@ app.get('/api/lists', function(req, res) {
 
 app.get('/api/lists/:label', function(req, res) {
   lists.load2Current(req.params.label);
+  console.log(lists.getCurrent());
+  points.init();
   points.load(lists.getCurrent());
+  points.get();
   res.json(points.get());
 });
 
@@ -85,8 +88,13 @@ app.delete('/api/lists/:label', function(req, res) {//delete point by id
   lists.delete(req.body.label);
 });
 
-app.post('/api/lists', function(req, res) {//Add/Create new point / import points list
+app.post('/api/lists', function(req, res) {
   lists.saveCurrent(req.body.label);
+  var a = [];
+  for(key in lists.getSaved()){
+    a.push(key);
+  }
+  res.json(a);
 });
 
 app.listen(app.get('port'), function() {
