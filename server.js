@@ -68,7 +68,11 @@ app.post('/api/points/upload', function(req, res) {//Add/Create new point / impo
 
 
 app.get('/api/lists', function(req, res) {
-  res.json(lists.getSaved());
+  var a = [];
+  for(key in lists.getSaved()){
+    a.push(key);
+  }
+  res.json(a);
 });
 
 app.get('/api/lists/:label', function(req, res) {

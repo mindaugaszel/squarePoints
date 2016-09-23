@@ -9,6 +9,35 @@
  * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
+var App = React.createClass({
+  render: function() {
+    return (
+      <div>
+        <CommentBox url="/api/points" pollInterval={2000} />
+        <StoredListsBox url="/api/lists" pollInterval={2000} />
+      </div>
+    );
+  }
+});
+
+var StoredLists = React.createClass({
+  handlePointRemove: function(list){
+    console.log(list);
+  },
+  render: function() {
+    var listItems = this.props.data.map(function(listItem) {
+      return (
+        <StoredList key={listItem} label={listItem} />
+      );
+    });
+    return (
+      <ul>
+        {listItems}
+      </ul>
+    );
+  }
+});
+
 var StoredList = React.createClass({
   handleRemove: function(e) {
     this.props.onPointRemove();
@@ -21,14 +50,34 @@ var StoredList = React.createClass({
   }
 });
 
-var StoredLists = React.createClass({
+var StoredListsBox = React.createClass({
   getInitialState: function() {
     return {data: []};
   },
+  componentDidMount: function() {
+    this.loadStoredLists();
+  },
+  loadStoredLists: function() {
+    $.ajax({
+      url: this.props.url,
+      dataType: 'json',
+      cache: false,
+      success: function(data) {
+        console.log(data);
+        this.setState({data: data});
+      }.bind(this),
+      error: function(xhr, status, err) {
+        console.error(this.props.url, status, err.toString());
+      }.bind(this)
+    });
+  },
   render: function() {
     return (
-      <li>{this.props.label} | {this.props.id}</li>
-      
+      <div>
+        <h1>Saved Lists</h1>
+        <StoredLists data={this.state.data} />
+        <PointForm onPointSubmit={this.handlePointSubmit} />
+      </div>
     );
   }
 });
@@ -112,7 +161,7 @@ var PointList = React.createClass({
       );
     });
     return (
-      <ul className="pointList">
+      <ul>
         {pointNodes}
       </ul>
     );
@@ -163,6 +212,6 @@ var PointForm = React.createClass({
 });
 
 ReactDOM.render(
-  <CommentBox url="/api/points" pollInterval={2000} />,
+  <App/>,
   document.getElementById('content')
 );
