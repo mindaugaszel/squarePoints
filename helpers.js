@@ -24,7 +24,7 @@ console.log(chunkSize);
 	function getPoints(){
 		pointsProcessed++;
 		console.log(pointsProcessed)
-		return inArray.slice(0,inArray.length-pointsProcessed-1);
+		return inArray.slice(0,inArray.length-pointsProcessed);//slice doesn't include "end" index...
 	}
 		
 	for (var i = processes; i > 0; i--) {

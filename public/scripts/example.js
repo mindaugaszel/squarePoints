@@ -22,66 +22,15 @@ var App = React.createClass({
 	render: function() {
 		return (
 			<div>
-				<PointsBox url="/api/points" ref={reference => this.pointsBox = reference}/>
-				<StoredListsBox url="/api/lists" onStoredListLoad={this.handleStoredListLoad}/>
-				<SquareContainer />
+				<PointsContainer url="/api/points" ref={reference => this.pointsBox = reference}/>
+				<StoredListsContainer url="/api/lists" onStoredListLoad={this.handleStoredListLoad}/>
+				<SquaresContainer />
 			</div>
 		);
 	}
 });
 
-var StoredLists = React.createClass({
-	render: function() {
-		var listElements = this.props.data.map(
-									function(listLabel, index) {
-										return (
-											<li key={index}>
-												{listLabel}
-												<a href='#' onClick={this.props.onListDelete.bind(null, listLabel)}> Delete</a>
-												<a href='#' onClick={this.props.onListLoad.bind(null, listLabel)}> Load</a>
-												<a href={'lists/' + listLabel}> Download</a>
-											</li>
-										);
-									}, this);
-		return (
-			<ul>
-				{ listElements }
-			</ul>
-		);
-	}
-});
-
-
-
-var ListsForm = React.createClass({
-	getInitialState: function() {
-		return {label: ''};
-	},
-	handleLabelChange: function(e) {
-		this.setState({label: e.target.value});
-	},
-	handleSubmit: function(e) {
-		e.preventDefault();
-		console.log(this.state.label.trim());
-		this.props.onListSave(this.state.label.trim());
-		this.setState({label: ''}); //TODO change to default state
-	},
-	render: function() {
-		return (
-			<form onSubmit={this.handleSubmit}>
-				<input
-					type="text"
-					placeholder="Label for the current point list"
-					value={this.state.label}
-					onChange={this.handleLabelChange}
-				/>
-				<input type="submit" value="Save" onSubmit={this.handleSubmit}/>
-			</form>
-		);
-	}
-});
-
-var StoredListsBox = React.createClass({
+var StoredListsContainer = React.createClass({
 	getInitialState: function() {
 		return {data: []};
 	},
@@ -165,16 +114,64 @@ var StoredListsBox = React.createClass({
 	render: function() {
 		return (
 			<div>
-				<h1>Saved Lists</h1>
+				<h1>Stored Lists</h1>
 				<StoredLists data={this.state.data} onListDelete={this.handleListDelete} onListLoad={this.handleListLoad}/>
-				<ListsForm onListSave={this.handleListSave}/>
+				<StoreListForm onListSave={this.handleListSave}/>
 			</div>
 		);
 	}
 });
 
+var StoredLists = React.createClass({
+	render: function() {
+		var listElements = this.props.data.map(
+									function(listLabel, index) {
+										return (
+											<li key={index}>
+												{listLabel}
+												<a href='#' onClick={this.props.onListDelete.bind(null, listLabel)}> Delete</a>
+												<a href='#' onClick={this.props.onListLoad.bind(null, listLabel)}> Load</a>
+												<a href={'lists/' + listLabel}> Download</a>
+											</li>
+										);
+									}, this);
+		return (
+			<ul>
+				{ listElements }
+			</ul>
+		);
+	}
+});
 
-var PointsBox = React.createClass({
+var StoreListForm = React.createClass({
+	getInitialState: function() {
+		return {label: ''};
+	},
+	handleLabelChange: function(e) {
+		this.setState({label: e.target.value});
+	},
+	handleSubmit: function(e) {
+		e.preventDefault();
+		console.log(this.state.label.trim());
+		this.props.onListSave(this.state.label.trim());
+		this.setState({label: ''}); //TODO change to default state
+	},
+	render: function() {
+		return (
+			<form onSubmit={this.handleSubmit}>
+				<input
+					type="text"
+					placeholder="Label for the current point list"
+					value={this.state.label}
+					onChange={this.handleLabelChange}
+				/>
+				<input type="submit" value="Save" onSubmit={this.handleSubmit}/>
+			</form>
+		);
+	}
+});
+
+var PointsContainer = React.createClass({
 	getInitialState: function() {
 		return {data: []};
 	},
@@ -218,7 +215,6 @@ var PointsBox = React.createClass({
 		var pointsBackup = points;
 
 		points.splice(points.indexOf(pointLabel),1);
-		console.log(points);
 		this.setState({data: points});
 		$.ajax({
 			url: this.props.url+'/'+pointLabel, //TODO: there must be better way
@@ -264,7 +260,7 @@ var PointsBox = React.createClass({
 			<div>
 				<h1>Current Points</h1>
 				<PointList data={this.state.data} onPointRemove={this.handleRemovePoint}/>
-				<PointForm onPointSubmit={this.handleSubmitPoint} />
+				<PointsForm onPointSubmit={this.handleSubmitPoint} />
 				<span onClick={this.handleRemoveAllPoints}>Remove All </span>
 				<a href='points/'> Download</a>
 			</div>
@@ -274,6 +270,7 @@ var PointsBox = React.createClass({
 
 var PointList = React.createClass({
 	render: function() {
+		console.log('pointsList render')
 		var pointListElements = this.props.data.map(
 											function(pointLabel, index) {
 												return (
@@ -285,10 +282,10 @@ var PointList = React.createClass({
 											}, this);
 		return (
 			<div>
-				<div>
+				<h3>Counter: {this.props.data.length}
 					<a>⇧</a>
 					<a>⇩</a>
-				</div>
+				</h3>
 				<ul>
 					{ pointListElements }
 				</ul>
@@ -297,7 +294,7 @@ var PointList = React.createClass({
 	}
 });
 
-var PointForm = React.createClass({
+var PointsForm = React.createClass({
 	getInitialState: function() {
 		return {X: '', Y: ''};
 	},
@@ -320,6 +317,23 @@ var PointForm = React.createClass({
 		this.props.onPointSubmit(label);
 		this.setState({X: '', Y: ''});
 	},
+	handleUpload: function(e) {
+		console.log('upload');
+		var fd = new FormData();    
+      fd.append('file', this.fileInput.files[0]);
+		//console.dir(this.fileInput);
+		$.ajax({
+            url: 'points',
+            data: fd,
+            processData: false,
+            contentType: false,
+            type: 'POST',
+            success: function(data){
+                console.log(data);
+            } 
+        });
+        e.preventDefault()
+	},
 	render: function() {
 		return (
 			<form onSubmit={this.handleSubmit}>
@@ -336,12 +350,13 @@ var PointForm = React.createClass({
 					onChange={this.handleYChange}
 				/>
 				<input type="submit" value="Add" onSubmit={this.handleSubmit}/>
+				<input type="file" onChange={this.handleUpload} ref={reference => this.fileInput = reference}/>
 			</form>
 		);
 	}
 });
 
-var SquareContainer = React.createClass({
+var SquaresContainer = React.createClass({
 	getInitialState: function() {
 		return {data: []};
 	},

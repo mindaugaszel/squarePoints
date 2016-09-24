@@ -50,6 +50,8 @@ listsUtil.prototype.load2Current = function(label){
 }
 
 listsUtil.prototype.saveCurrent = function(label){
+	let id = ''
+		;
 	if( label in this.data.storedLists ){
 		id = this.data.storedLists[label];
 	}else{

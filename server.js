@@ -11,6 +11,7 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
  //https://github.com/ctavan/express-validator
+ //http://stackoverflow.com/questions/28750489/upload-file-component-with-reactjs
 
 var fs = require('fs');
 var path = require('path');
@@ -21,7 +22,7 @@ var app = express();
 var pUtil = require('./pointsUtil');
 var lUtil = require('./listsUtil');
 
-var points = new pUtil();
+var points = new pUtil({maxPointsAllowed:10000});
 var lists = new lUtil('./data/');
 
 points.load(lists.getCurrent());
@@ -40,6 +41,8 @@ app.use(function(req, res, next) {
 		res.setHeader('Cache-Control', 'no-cache');
 		next();
 });
+
+
 app.get('/lists/:label', function(req, res) {
 	res.attachment(req.params.label+'.txt');
 	res.send(lists.getListPoints(req.params.label).join('\n'));
@@ -48,6 +51,26 @@ app.get('/points', function(req, res) {
 	res.attachment('point list.txt');
 	res.send(points.get().join('\n'));//TODO: synchronize sorting in UI
 });
+app.post('/points', function(req, res) {
+	let fstream;
+	req.pipe(req.busboy);
+	req.busboy.on('file', function (fieldname, file, filename) {
+		let path = './tmp/' + filename;
+		fstream = fs.createWriteStream(path);
+		file.pipe(fstream);
+		fstream.on('close', function () {    
+			console.log("Upload Finished of " + filename);
+			points.handleRawFile(path, function(errors, coordinates4System){
+				console.log(errors);
+				lists.updateCurrent(points.get());
+			});
+			// should respond somehow res.redirect('back');
+			res.end();
+		});
+	});
+});
+
+
 
 app.get('/api/points', function(req, res) {
 	res.json(points.get());
@@ -70,9 +93,7 @@ app.post('/api/points', function(req, res) {//Add/Create new point / import poin
 	lists.updateCurrent(points.get());
 	res.json(points.get());
 });
-app.post('/api/points/upload', function(req, res) {//Add/Create new point / import points list
-	//http://stackoverflow.com/questions/23691194/node-express-file-upload
-});
+
 
 
 
@@ -101,7 +122,7 @@ app.delete('/api/lists/:label', function(req, res) {//delete point by id
 app.post('/api/lists', function(req, res) {
 	lists.saveCurrent(req.body.label);
 	var a = [];
-	for(key in lists.getStored()){
+	for(let key in lists.getStored()){
 		a.push(key);
 	}
 	res.json(a);
