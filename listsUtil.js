@@ -1,3 +1,5 @@
+"use strict"
+
 const path = require('path')
 	,fs = require('fs')
 	;
@@ -8,20 +10,28 @@ function listsUtil(storageDir){
 	this.mainConfig = path.format({dir: this.storageDir, base: 'config.json'});
 	this.data = new Object;
 	this.data.currentList = new Array;
-	this.data.savedLists = parseJSONObject(fs.readFileSync(this.mainConfig, {encoding:'utf8'}));
+	this.data.storedLists = parseJSONObject(fs.readFileSync(this.mainConfig, {encoding:'utf8'}));
 	if(this.allLists === false){
-		this.data.savedLists = new Object;
+		this.data.storedLists = new Object;
 	}
 	
 	return this;
 }
 
-listsUtil.prototype.getSaved = function(){
-	return this.data.savedLists;
+listsUtil.prototype.getStored = function(){
+	return this.data.storedLists;
 }
 
 listsUtil.prototype.getCurrent = function(){
 	return this.data.currentList;
+}
+
+listsUtil.prototype.getListPoints = function(label){
+	var filePath = path.format({
+								dir: this.storageDir,
+								base: this.data.storedLists[ label ]
+							});
+	return parseJSONObject( fs.readFileSync( filePath, {encoding:'utf8'}));
 }
 
 listsUtil.prototype.updateCurrent = function(points){
@@ -31,7 +41,7 @@ listsUtil.prototype.updateCurrent = function(points){
 listsUtil.prototype.load2Current = function(label){
 	var filePath = path.format({
 								dir: this.storageDir,
-								base: this.data.savedLists[ label ]
+								base: this.data.storedLists[ label ]
 							});
 	this.data.currentList = parseJSONObject( fs.readFileSync( filePath, {encoding:'utf8'}));
 	if(this.data.currentList === false){
@@ -40,11 +50,11 @@ listsUtil.prototype.load2Current = function(label){
 }
 
 listsUtil.prototype.saveCurrent = function(label){
-	if( label in this.data.savedLists ){
-		id = this.data.savedLists[label];
+	if( label in this.data.storedLists ){
+		id = this.data.storedLists[label];
 	}else{
 		id = new Date().getTime();
-		this.data.savedLists[label] = id;
+		this.data.storedLists[label] = id;
 	}
 	console.log(this.data.currentList);
 	fs.writeFileSync(path.format({dir: this.storageDir, base: id}),
@@ -58,21 +68,21 @@ listsUtil.prototype.saveCurrent = function(label){
 listsUtil.prototype.delete = function(label){
 	var filePath = path.format({
 								dir: this.storageDir,
-								base: this.data.savedLists[ label ]
+								base: this.data.storedLists[ label ]
 							});
 	console.log('unlink ', filePath);
 	fs.unlinkSync(filePath);
-	delete this.data.savedLists[label];
+	delete this.data.storedLists[label];
 	this.store();
 }
 
 listsUtil.prototype.store = function(){
 	fs.writeFileSync(this.mainConfig,
-					 JSON.stringify(this.data.savedLists, null, 2),
+					 JSON.stringify(this.data.storedLists, null, 2),
 					 {encoding:'utf8'});
 }
 
-parseJSONObject = function( object ) {
+const parseJSONObject = function( object ) {
 
 	try {
 		return JSON.parse( object );

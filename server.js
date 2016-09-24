@@ -41,10 +41,12 @@ app.use(function(req, res, next) {
 		next();
 });
 app.get('/lists/:label', function(req, res) {
-	console.log('download');
-	let filePath = './data/'+lists.getSaved()[req.params.label]; // TODO posible vulnerability
-	//res.setHeader('Content-Type', 'text/plain', 'charset=utf-8');
-	res.download(filePath, req.params.label+'.txt');
+	res.attachment(req.params.label+'.txt');
+	res.send(lists.getListPoints(req.params.label).join('\n'));
+});
+app.get('/points', function(req, res) {
+	res.attachment('point list.txt');
+	res.send(points.get().join('\n'));//TODO: synchronize sorting in UI
 });
 
 app.get('/api/points', function(req, res) {
@@ -77,7 +79,7 @@ app.post('/api/points/upload', function(req, res) {//Add/Create new point / impo
 
 app.get('/api/lists', function(req, res) {
 	var a = [];
-	for(let key in lists.getSaved()){
+	for(let key in lists.getStored()){
 		a.push(key);
 	}
 	res.json(a);
@@ -87,6 +89,7 @@ app.get('/api/lists/:label', function(req, res) {
 	lists.load2Current(req.params.label);
 	points.init();
 	points.load(lists.getCurrent());
+	res.json([]);
 	//points.get();
 	//res.json(points.get());
 });
@@ -98,7 +101,7 @@ app.delete('/api/lists/:label', function(req, res) {//delete point by id
 app.post('/api/lists', function(req, res) {
 	lists.saveCurrent(req.body.label);
 	var a = [];
-	for(key in lists.getSaved()){
+	for(key in lists.getStored()){
 		a.push(key);
 	}
 	res.json(a);

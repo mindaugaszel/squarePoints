@@ -8,7 +8,11 @@
  * FACEBOOK BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
  * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ http://andrewhfarmer.com/component-communication/
+ https://facebook.github.io/react/tips/expose-component-functions.html
+ https://zbyte64.github.io/reactjs-crashcourse/lesson2.html
  */
+
 var App = React.createClass({
 	//var pointsBoxRef;
 	handleStoredListLoad: function(){
@@ -20,6 +24,7 @@ var App = React.createClass({
 			<div>
 				<PointsBox url="/api/points" ref={reference => this.pointsBox = reference}/>
 				<StoredListsBox url="/api/lists" onStoredListLoad={this.handleStoredListLoad}/>
+				<SquareContainer />
 			</div>
 		);
 	}
@@ -260,7 +265,8 @@ var PointsBox = React.createClass({
 				<h1>Current Points</h1>
 				<PointList data={this.state.data} onPointRemove={this.handleRemovePoint}/>
 				<PointForm onPointSubmit={this.handleSubmitPoint} />
-				<input type="button" value="Remove All" onClick={this.handleRemoveAllPoints} />
+				<span onClick={this.handleRemoveAllPoints}>Remove All </span>
+				<a href='points/'> Download</a>
 			</div>
 		);
 	}
@@ -273,14 +279,20 @@ var PointList = React.createClass({
 												return (
 													<li key={index}>
 														{pointLabel}
-														<a href='#' onClick={this.props.onPointRemove.bind(null, pointLabel)}>Remove</a>
+														<a href='#' onClick={this.props.onPointRemove.bind(null, pointLabel)}> Remove</a>
 													</li>
 												);
 											}, this);
 		return (
-			<ul>
-				{ pointListElements }
-			</ul>
+			<div>
+				<div>
+					<a>⇧</a>
+					<a>⇩</a>
+				</div>
+				<ul>
+					{ pointListElements }
+				</ul>
+			</div>
 		);
 	}
 });
@@ -325,6 +337,61 @@ var PointForm = React.createClass({
 				/>
 				<input type="submit" value="Add" onSubmit={this.handleSubmit}/>
 			</form>
+		);
+	}
+});
+
+var SquareContainer = React.createClass({
+	getInitialState: function() {
+		return {data: []};
+	},
+	loadsquares: function() {
+		console.log('someone would like to find squares');
+	},
+	render: function() {
+		return (
+			<div>
+				<h1>Counter: {this.state.data.length} </h1>
+				<SquareList data={this.state.data}/>
+			</div>
+		);
+	}
+});
+
+var SquareList = React.createClass({
+	render: function() {
+		var squareListElements = this.props.data.map(
+											function(square, index) {
+												return (
+													<Square id={square.id} data={square.points} key={index}/>
+												);
+											},this);
+		return (
+			<div>
+				<ul>
+					{ squareListElements }
+				</ul>
+				//paging
+			</div>
+		);
+	}
+});
+
+var Square = React.createClass({
+	render: function() {
+		var pointListElements = this.props.data.map(
+											function(pointLabel, index) {
+												return (
+													<li key={index}>{pointLabel}</li>
+												);
+											});
+		return (
+			<div>
+				<span>this.props.id</span>
+				<ul>
+					{ pointListElements }
+				</ul>
+			</div>
 		);
 	}
 });
