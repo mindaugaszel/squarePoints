@@ -13,8 +13,8 @@ var App = React.createClass({
   render: function() {
     return (
       <div>
-        <CommentBox url="/api/points" pollInterval={2000} />
-        <StoredListsBox url="/api/lists" pollInterval={2000} />
+        <PointsBox url="/api/points" />
+        <StoredListsBox url="/api/lists" />
       </div>
     );
   }
@@ -91,6 +91,7 @@ var StoredListsBox = React.createClass({
       url: this.props.url,
       dataType: 'json',
       cache: false,
+      tiemeout: 1000,
       success: function(data) {
         this.setState({data: data});
       }.bind(this),
@@ -103,12 +104,6 @@ var StoredListsBox = React.createClass({
     var lists = this.state.data;
     var updatedLists = lists;
     console.log('handleListSave ',newListLabel);
-    /*for(var i in lists){
-      console.log(lists[i], newListLabel, lists[i] == newListLabel)
-      if (list[i] == newListLabel){
-        return;//TODO: show error somehow
-      }
-    }*/
     if(lists.indexOf(newListLabel) === -1){
       updatedLists = lists.concat(newListLabel);
     }
@@ -118,6 +113,7 @@ var StoredListsBox = React.createClass({
       url: this.props.url,
       dataType: 'json',
       type: 'POST',
+      tiemeout: 1000,
       data: {label: newListLabel},
       success: function(data) {
         this.setState({data: data});
@@ -151,7 +147,7 @@ var Point = React.createClass({
   }
 });
 
-var CommentBox = React.createClass({
+var PointsBox = React.createClass({
   getInitialState: function() {
     return {data: []};
   },
@@ -162,11 +158,29 @@ var CommentBox = React.createClass({
     $.ajax({
       url: this.props.url,
       dataType: 'json',
+      tiemeout: 1000,
       cache: false,
       success: function(data) {
         this.setState({data: data});
       }.bind(this),
       error: function(xhr, status, err) {
+        console.error(this.props.url, status, err.toString());
+      }.bind(this)
+    });
+  },
+  handleRemoveAllPoints: function(){
+    var points = this.state.data;
+    this.setState({data: []}); //TODO: set to default state or smthng
+    $.ajax({
+      url: this.props.url,
+      dataType: 'json',
+      type: 'DELETE',
+      tiemeout: 1000,
+      success: function(data) {
+        this.setState({data: data});
+      }.bind(this),
+      error: function(xhr, status, err) {
+        this.setState({data: points});
         console.error(this.props.url, status, err.toString());
       }.bind(this)
     });
@@ -185,6 +199,7 @@ var CommentBox = React.createClass({
       url: this.props.url,
       dataType: 'json',
       type: 'POST',
+      tiemeout: 1000,
       data: {label: newPointLabel},
       success: function(data) {
         this.setState({data: data});
@@ -201,6 +216,7 @@ var CommentBox = React.createClass({
         <h1>Comments</h1>
         <PointList data={this.state.data} />
         <PointForm onPointSubmit={this.handlePointSubmit} />
+        <input type="button" value="Remove All" onClick={this.handleRemoveAllPoints} />
       </div>
     );
   }

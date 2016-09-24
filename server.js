@@ -59,6 +59,7 @@ app.delete('/api/points/:id', function(req, res) {//delete point by id
 app.post('/api/points', function(req, res) {//Add/Create new point / import points list
   points.add(req.body.label); // change from label to something appropriate
   lists.updateCurrent(points.get());
+  res.json(points.get());
 });
 app.post('/api/points/upload', function(req, res) {//Add/Create new point / import points list
   //http://stackoverflow.com/questions/23691194/node-express-file-upload
