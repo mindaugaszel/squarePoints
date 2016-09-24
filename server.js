@@ -33,71 +33,70 @@ app.use(bodyParser.urlencoded({extended: true}));
 app.use(busboy());
 
 app.use(function(req, res, next) {
-    // Set permissive CORS header - this allows this server to be used only as
-    // an API server in conjunction with something like webpack-dev-server.
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Cache-Control', 'no-cache');
-    next();
+		// Set permissive CORS header - this allows this server to be used only as
+		// an API server in conjunction with something like webpack-dev-server.
+		res.setHeader('Access-Control-Allow-Origin', '*');
+		res.setHeader('Cache-Control', 'no-cache');
+		next();
 });
 
 app.get('/api/points', function(req, res) {
-  res.json(points.get());
+	res.json(points.get());
 });
 app.get('/api/points/download', function(req, res) {
-  res.json(points.get());//TODO: format to raw/txt format
+	res.json(points.get());//TODO: format to raw/txt format
 });
 app.delete('/api/points', function(req, res) {//clear all points
-  points.init();
-  lists.updateCurrent(points.get());
+	points.init();
+	lists.updateCurrent(points.get());
 });
 
 app.delete('/api/points/:id', function(req, res) {//delete point by id
-  points.remove(req.body.id);
-  lists.updateCurrent(points.get());
+	points.remove(req.body.id);
+	lists.updateCurrent(points.get());
 });
 
 app.post('/api/points', function(req, res) {//Add/Create new point / import points list
-  points.add(req.body.label); // change from label to something appropriate
-  lists.updateCurrent(points.get());
-  res.json(points.get());
+	points.add(req.body.label); // change from label to something appropriate
+	lists.updateCurrent(points.get());
+	res.json(points.get());
 });
 app.post('/api/points/upload', function(req, res) {//Add/Create new point / import points list
-  //http://stackoverflow.com/questions/23691194/node-express-file-upload
+	//http://stackoverflow.com/questions/23691194/node-express-file-upload
 });
 
 
 
 
 app.get('/api/lists', function(req, res) {
-  var a = [];
-  for(key in lists.getSaved()){
-    a.push(key);
-  }
-  res.json(a);
+	var a = [];
+	for(key in lists.getSaved()){
+		a.push(key);
+	}
+	res.json(a);
 });
 
 app.get('/api/lists/:label', function(req, res) {
-  lists.load2Current(req.params.label);
-  console.log(lists.getCurrent());
-  points.init();
-  points.load(lists.getCurrent());
-  points.get();
-  res.json(points.get());
+	lists.load2Current(req.params.label);
+	points.init();
+	points.load(lists.getCurrent());
+	//points.get();
+	//res.json(points.get());
 });
 
 app.delete('/api/lists/:label', function(req, res) {//delete point by id
-  lists.delete(req.body.label);
+	lists.delete(req.params.label);
 });
 
 app.post('/api/lists', function(req, res) {
-  lists.saveCurrent(req.body.label);
-  var a = [];
-  for(key in lists.getSaved()){
-    a.push(key);
-  }
-  res.json(a);
+	lists.saveCurrent(req.body.label);
+	var a = [];
+	for(key in lists.getSaved()){
+		a.push(key);
+	}
+	res.json(a);
 });
 
 app.listen(app.get('port'), function() {
-  console.log('Server started: http://localhost:' + app.get('port') + '/');
+	console.log('Server started: http://localhost:' + app.get('port') + '/');
 });

@@ -60,6 +60,7 @@ listsUtil.prototype.delete = function(label){
 								dir: this.storageDir,
 								base: this.data.savedLists[ label ]
 							});
+	console.log('unlink ', filePath);
 	fs.unlinkSync(filePath);
 	delete this.data.savedLists[label];
 	this.store();

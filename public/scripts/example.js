@@ -10,11 +10,16 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 var App = React.createClass({
+	//var pointsBoxRef;
+	handleStoredListLoad: function(){
+		console.log('App got request to reload current points');
+		this.pointsBox.loadCurrentPoints();
+	},
 	render: function() {
 		return (
 			<div>
-				<PointsBox url="/api/points" />
-				<StoredListsBox url="/api/lists" />
+				<PointsBox url="/api/points" ref={reference => this.pointsBox = reference}/>
+				<StoredListsBox url="/api/lists" onStoredListLoad={this.handleStoredListLoad}/>
 			</div>
 		);
 	}
@@ -27,7 +32,8 @@ var StoredLists = React.createClass({
 										return (
 											<li key={index}>
 												{listLabel}
-												<a href='#' onClick={this.props.onListDelete.bind(null, listLabel)}>Delete</a>
+												<a href='#' onClick={this.props.onListDelete.bind(null, listLabel)}> Delete</a>
+												<a href='#' onClick={this.props.onListLoad.bind(null, listLabel)}> Load</a>
 											</li>
 										);
 									}, this);
@@ -114,14 +120,47 @@ var StoredListsBox = React.createClass({
 			}.bind(this)
 		});
 	},
-	handleListDelete: function(listItemLabel){
-		console.log('handleListDelete.', listItemLabel);
+	handleListDelete: function(listLabel){
+		console.log('pls delete list: ', listLabel);
+		var lists = this.state.data;
+		var listsBackup = lists;
+
+		lists.splice(lists.indexOf(listLabel),1);
+		this.setState({data: lists});
+		$.ajax({
+			url: this.props.url+'/'+listLabel, //TODO: there must be better way
+			dataType: 'json',
+			type: 'DELETE',
+			tiemeout: 1000,
+			success: function(data) {
+				this.setState({data: data});
+			}.bind(this),
+			error: function(xhr, status, err) {
+				this.setState({data: listsBackup});
+				console.error(this.props.url, status, err.toString());
+			}.bind(this)
+		});
+	},
+	handleListLoad: function(listLabel){
+		console.log('pls load list: ', listLabel);
+		$.ajax({
+			url: this.props.url+'/'+listLabel, //TODO: there must be better way
+			dataType: 'json',
+			type: 'GET',
+			tiemeout: 1000,
+			success: function(data) {
+				this.props.onStoredListLoad(); // signal app to reload current points
+			}.bind(this),
+			error: function(xhr, status, err) {
+				console.error(this.props.url, status, err.toString());
+			}.bind(this)
+		});
 	},
 	render: function() {
 		return (
 			<div>
 				<h1>Saved Lists</h1>
-				<StoredLists data={this.state.data}  onListDelete={this.handleListDelete}/>
+				<StoredLists data={this.state.data} onListDelete={this.handleListDelete} onListLoad={this.handleListLoad}/>
 				<ListsForm onListSave={this.handleListSave}/>
 			</div>
 		);
@@ -169,12 +208,14 @@ var PointsBox = React.createClass({
 	},
 	handleRemovePoint:function(pointLabel){
 		console.log('pls remove point: ', pointLabel);
-
 		var points = this.state.data;
-		var updatedPoints = points.splice(points.indexOf(pointLabel,1));
-		this.setState({data: updatedPoints});
+		var pointsBackup = points;
+
+		points.splice(points.indexOf(pointLabel),1);
+		console.log(points);
+		this.setState({data: points});
 		$.ajax({
-			url: this.props.url+'/'+pointLabel,
+			url: this.props.url+'/'+pointLabel, //TODO: there must be better way
 			dataType: 'json',
 			type: 'DELETE',
 			tiemeout: 1000,
@@ -182,7 +223,7 @@ var PointsBox = React.createClass({
 				this.setState({data: data});
 			}.bind(this),
 			error: function(xhr, status, err) {
-				this.setState({data: points});
+				this.setState({data: pointsBackup});
 				console.error(this.props.url, status, err.toString());
 			}.bind(this)
 		});
@@ -215,7 +256,7 @@ var PointsBox = React.createClass({
 	render: function() {
 		return (
 			<div>
-				<h1>Comments</h1>
+				<h1>Current Points</h1>
 				<PointList data={this.state.data} onPointRemove={this.handleRemovePoint}/>
 				<PointForm onPointSubmit={this.handleSubmitPoint} />
 				<input type="button" value="Remove All" onClick={this.handleRemoveAllPoints} />
