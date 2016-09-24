@@ -13,18 +13,18 @@ function calcVectorLengths(inArray, callback){
 		,fileEncoding = 'ascii'		
 		,i = 0
 		;
-
+	
 	for (i = inArray.length - 1; i >= 0; i--) {
 		buffer.push( getDistance(inArray[i][0], element[0], inArray[i][1], element[1]).toString() +
 					' '+ element[0] +' '+ element[1] +' '+ inArray[i][0] +' '+ inArray[i][1]);
 	};
-	
+
 	writeSuccesss = writeStream.write(buffer.join('\n')+ '\n', fileEncoding)
-	if(writeSuccesss){
-		writeStream.once('drain', function(callback){
-			console.log('d');
+	if(!writeSuccesss){
+		writeStream.once('drain', function(){
 			callback();
 		});
+		//console.log('SLOW');
 	}else{
 		callback();
 	}
@@ -69,15 +69,17 @@ process.on('message', (task)=>{
 			break;
 		case 'sort':
 			writeStream.end((task)=>{
-				sortedFd = fs.openSync('./out.log', 'w');
-				sortProcess = spawn('sort', ['-n', '-k1,1', task.sortFilePath], {stdio: ['pipe', sortedFd, 'pipe']});
+				sortedFd = fs.openSync('./sortedOutput'+workerId, 'w');
+				sortProcess = spawn('sort', ['-n', '-k1,1', 'tmp/workerOutput'+workerId], {stdio: ['pipe', sortedFd, 'pipe']});
 				sortProcess.on('close', (code) => {
 				  if (code !== 0) {
 				    console.log(`sortProcess process exited with code ${code}`);
+				  }else{
+				  	console.log('sort done');
 				  }
 				});
 
-				process.send({type:task.type, id: workerId, result: 'done'});
+				//process.send({type:task.type, id: workerId, result: 'done'});
 			});
 			break;
 	}

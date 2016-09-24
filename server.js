@@ -12,6 +12,8 @@
  */
  //https://github.com/ctavan/express-validator
  //http://stackoverflow.com/questions/28750489/upload-file-component-with-reactjs
+ //https://developer.mozilla.org/en/docs/Using_files_from_web_applications
+ //http://stackoverflow.com/questions/23691194/node-express-file-upload
 
 var fs = require('fs');
 var path = require('path');
@@ -22,10 +24,10 @@ var app = express();
 var pUtil = require('./pointsUtil');
 var lUtil = require('./listsUtil');
 
-var points = new pUtil({maxPointsAllowed:10000});
+var points = new pUtil({maxPointsAllowed:10000, parallelProcesses:3});
 var lists = new lUtil('./data/');
 
-points.load(lists.getCurrent());
+points.load(lists.getCurrent());//SLOW
 
 app.set('port', (process.env.PORT || 3000));
 
@@ -42,15 +44,20 @@ app.use(function(req, res, next) {
 		next();
 });
 
-
+app.get('/squares', function(req, res) {
+	points.calcVectorLengthsParallel(points.get());
+	res.send('OK');//TODO: synchronize sorting in UI
+});
 app.get('/lists/:label', function(req, res) {
 	res.attachment(req.params.label+'.txt');
 	res.send(lists.getListPoints(req.params.label).join('\n'));
 });
+
 app.get('/points', function(req, res) {
 	res.attachment('point list.txt');
-	res.send(points.get().join('\n'));//TODO: synchronize sorting in UI
+	res.send(points.get().join('\n'));					//TODO: synchronize sorting in UI
 });
+
 app.post('/points', function(req, res) {
 	let fstream;
 	req.pipe(req.busboy);
@@ -60,9 +67,9 @@ app.post('/points', function(req, res) {
 		file.pipe(fstream);
 		fstream.on('close', function () {    
 			console.log("Upload Finished of " + filename);
-			points.handleRawFile(path, function(errors, coordinates4System){
+			points.loadRawFile(path, function(errors, coordinates4System){
 				console.log(errors);
-				lists.updateCurrent(points.get());
+				lists.updateCurrent();
 			});
 			// should respond somehow res.redirect('back');
 			res.end();
@@ -109,7 +116,7 @@ app.get('/api/lists', function(req, res) {
 app.get('/api/lists/:label', function(req, res) {
 	lists.load2Current(req.params.label);
 	points.init();
-	points.load(lists.getCurrent());
+	points.load(lists.getCurrent());//SLOW
 	res.json([]);
 	//points.get();
 	//res.json(points.get());
