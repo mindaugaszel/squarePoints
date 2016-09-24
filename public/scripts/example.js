@@ -34,6 +34,7 @@ var StoredLists = React.createClass({
 												{listLabel}
 												<a href='#' onClick={this.props.onListDelete.bind(null, listLabel)}> Delete</a>
 												<a href='#' onClick={this.props.onListLoad.bind(null, listLabel)}> Load</a>
+												<a href={'lists/' + listLabel}> Download</a>
 											</li>
 										);
 									}, this);

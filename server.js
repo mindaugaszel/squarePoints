@@ -1,3 +1,4 @@
+"use strict"
 /**
  * This file provided by Facebook is for non-commercial testing and evaluation
  * purposes only. Facebook reserves all rights not expressly granted.
@@ -39,6 +40,12 @@ app.use(function(req, res, next) {
 		res.setHeader('Cache-Control', 'no-cache');
 		next();
 });
+app.get('/lists/:label', function(req, res) {
+	console.log('download');
+	let filePath = './data/'+lists.getSaved()[req.params.label]; // TODO posible vulnerability
+	//res.setHeader('Content-Type', 'text/plain', 'charset=utf-8');
+	res.download(filePath, req.params.label+'.txt');
+});
 
 app.get('/api/points', function(req, res) {
 	res.json(points.get());
@@ -70,7 +77,7 @@ app.post('/api/points/upload', function(req, res) {//Add/Create new point / impo
 
 app.get('/api/lists', function(req, res) {
 	var a = [];
-	for(key in lists.getSaved()){
+	for(let key in lists.getSaved()){
 		a.push(key);
 	}
 	res.json(a);
