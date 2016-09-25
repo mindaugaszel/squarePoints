@@ -141,7 +141,7 @@ pointsUtil.prototype.calcVectorLengthsParallel = function(){
 	
 	function getPoints(){
 		pointsProcessed++;
-		console.log('pointsProcessed %d', pointsProcessed);
+		//console.log('pointsProcessed %d', pointsProcessed);
 		return inArray.slice(0,inArray.length-pointsProcessed);//slice doesn't include "end" index...
 	}
 

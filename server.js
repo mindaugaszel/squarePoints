@@ -23,8 +23,10 @@ var busboy = require('connect-busboy');
 var app = express();
 var pUtil = require('./pointsUtil');
 var lUtil = require('./listsUtil');
+var vectorsUtil = require('./vectorsUtil');
 
 var points = new pUtil({maxPointsAllowed:10000, parallelProcesses:3});
+var vectors = new vectorsUtil({parallelProcesses:3});
 var lists = new lUtil('./data/');
 
 points.load(lists.getCurrent());//SLOW

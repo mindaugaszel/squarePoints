@@ -19,7 +19,7 @@ function calcVectorLengths(inArray, callback){
 					' '+ element[0] +' '+ element[1] +' '+ inArray[i][0] +' '+ inArray[i][1]);
 	};
 
-	writeSuccesss = writeStream.write(buffer.join('\n')+ '\n', fileEncoding)
+	writeSuccesss = writeStream.write(buffer.join('\n')+ '\n', fileEncoding)//TODO: change to store data in binary
 	if(!writeSuccesss){
 		writeStream.once('drain', function(){
 			callback();

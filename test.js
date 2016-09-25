@@ -1,11 +1,24 @@
 var points = require('./pointsUtil');
-var currentPoints = new points();
+//var currentPoints = new points();
 var lists = require('./listsUtil');
-var PointLists = new lists('./data/');
+//var PointLists = new lists('./data/');
+var vectorsUtil = require('./vectorsUtil');
 
+var vectors = new vectorsUtil({parallelProcesses:3});
+vectors.once('eqLengthVectorsFound', (data)=>{
+	//console.log('eqLenVectors', data);
+	vectors.findRectangles(data);
+})
 
+vectors.on('rectangleFound', (data)=>{
+	console.log('Rectangle:', data);
+	if(vectors.isSquare(data)){
+		console.log('and it is a RECTANGLE', data);
+	}
+})
+vectors.loadPoints();
 
-
+/*
 currentPoints.add('-1 1');
 console.log(currentPoints.add('-1 -1'));
 console.log(currentPoints.add('-1 -1'));
@@ -25,5 +38,5 @@ PointLists.updateCurrent(currentPoints.get());
 
 currentPoints.add('-2 -2');
 PointLists.updateCurrent(currentPoints.get());
-PointLists.saveCurrent('Second List with wrong characšįėęč');
+PointLists.saveCurrent('Second List with wrong characšįėęč');*/
 //PointLists.store();
