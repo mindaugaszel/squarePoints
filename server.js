@@ -15,19 +15,35 @@
  //https://developer.mozilla.org/en/docs/Using_files_from_web_applications
  //http://stackoverflow.com/questions/23691194/node-express-file-upload
 
-var fs = require('fs');
-var path = require('path');
-var express = require('express');
-var bodyParser = require('body-parser');
-var busboy = require('connect-busboy');
-var app = express();
-var pUtil = require('./pointsUtil');
-var lUtil = require('./listsUtil');
-var vectorsUtil = require('./vectorsUtil');
+const fs = require('fs')
+	,http = require('http')
+	,WebSocketServer = require('ws').Server
+	,express = require('express')
+	,bodyParser = require('body-parser')
+	,busboy = require('connect-busboy')
+	,path = require('path')
+	,app = express()
+	,httpServer = http.createServer(app)
+	;
+	
+const pUtil = require('./pointsUtil')
+	,lUtil = require('./listsUtil')
+	,vectorsUtil = require('./vectorsUtil')
+	;
 
-var points = new pUtil({maxPointsAllowed:10000, parallelProcesses:3});
-var vectors = new vectorsUtil({parallelProcesses:3});
-var lists = new lUtil('./data/');
+var points = new pUtil({maxPointsAllowed:10000, parallelProcesses:3})
+	,lists = new lUtil('./data/')
+	;
+
+
+var wss = new WebSocketServer({server: httpServer});
+
+wss.on('connection', function(ws) {
+
+    ws.on('message', function(message) {
+    	console.log(message);
+    })
+});
 
 points.load(lists.getCurrent());//SLOW
 
@@ -47,8 +63,44 @@ app.use(function(req, res, next) {
 });
 
 app.get('/squares', function(req, res) {
-	points.calcVectorLengthsParallel();
-	res.send('OK');//TODO: synchronize sorting in UI
+	var vectors = new vectorsUtil({parallelProcesses:3});
+	var result = new Array;
+
+	vectors.on('eqLengthVectorsFound', (data)=>{
+		vectors.findRectangles(data);
+	});
+	vectors.on('rectangleFound', (data)=>{
+		console.log('Rectangle:', data);
+		if(vectors.isSquare(data)){
+			var square = [];
+			for(var key in data){
+				square.push(key);
+			}
+			console.log('and it is a RECTANGLE', square);
+			result.push(square);
+		}
+	})
+	vectors.once('finish', ()=>{
+		console.log('done', result);
+		res.json(result);
+	})
+	let point = 0
+		,parsedCoordinates
+		;
+	
+	var a = points.get();
+	var a4Calc = [];
+	while(point = a.pop()){
+		parsedCoordinates = /^(-*\d+) (-*\d+)$/.exec(point);
+		a4Calc.push([ parsedCoordinates[1], parsedCoordinates[2] ]);
+	}
+	vectors.doEverything(a4Calc);
+	//points.calcVectorLengthsParallel();
+	
+	/*wss.clients.forEach(function (client) {
+		client.send('data');
+	});*/
+	//res.send('OK');//TODO: synchronize sorting in UI
 });
 app.get('/lists/:label', function(req, res) {
 	res.attachment(req.params.label+'.txt');
@@ -137,6 +189,7 @@ app.post('/api/lists', function(req, res) {
 	res.json(a);
 });
 
-app.listen(app.get('port'), function() {
+
+httpServer.listen(app.get('port'), function() {
 	console.log('Server started: http://localhost:' + app.get('port') + '/');
 });

@@ -28,7 +28,7 @@ var App = React.createClass({
 			<div style={style}>
 				<StoredListsContainer url="/api/lists" onStoredListLoad={this.handleStoredListLoad}/>
 				<PointsContainer url="/api/points" ref={reference => this.pointsBox = reference}/>
-				<SquaresContainer />
+				<SquaresContainer url="/squares"/>
 			</div>
 		);
 	}
@@ -263,6 +263,9 @@ var PointsContainer = React.createClass({
 			}.bind(this)
 		});
 	},
+	handlePointsUpload: function(){
+		this.loadCurrentPoints();
+	},
 	render: function() {
 		const style = {
 			display: 'table-cell',
@@ -272,7 +275,7 @@ var PointsContainer = React.createClass({
 			<div style={style}>
 				<h2>Current Points</h2>
 				<PointList data={this.state.data} onPointRemove={this.handleRemovePoint}/>
-				<PointsForm onPointSubmit={this.handleSubmitPoint} />
+				<PointsForm onPointSubmit={this.handleSubmitPoint} onUpload={this.handlePointsUpload}/>
 				<a href='#' onClick={this.handleRemoveAllPoints}>Remove All </a>
 				<a href='points/'> Download All</a>
 			</div>
@@ -341,8 +344,8 @@ var PointsForm = React.createClass({
             contentType: false,
             type: 'POST',
             success: function(data){
-                console.log(data);
-            } 
+                this.props.onUpload();
+            }.bind(this)
         });
         e.preventDefault()
 	},
@@ -374,19 +377,18 @@ var SquaresContainer = React.createClass({
 	},
 	loadsquares: function() {
 		console.log('someone would like to find squares');
-		var ws = new WebSocket('ws://localhost:8080/events')//should be global?
-		console.dir(ws);
-		ws.onopen = function(){
-             connection.send("Ping");
-        };
- 
-        ws.onerror = function(error){
-            console.log(error);
-        };
-        
-        ws.onmessage = function(e){
-             console.log("From server: " + e.data);
-        };
+		$.ajax({
+			url: this.props.url,
+			dataType: 'json',
+			tiemeout: 60000,
+			cache: false,
+			success: function(data) {
+				this.setState({data: data});
+			}.bind(this),
+			error: function(xhr, status, err) {
+				console.error(this.props.url, status, err.toString());
+			}.bind(this)
+		});
 	},
 	render: function() {
 		const style = {
@@ -409,7 +411,7 @@ var SquareList = React.createClass({
 		var squareListElements = this.props.data.map(
 											function(square, index) {
 												return (
-													<Square id={square.id} data={square.points} key={index}/>
+													<Square data={square} key={index}/>
 												);
 											},this);
 		return (
@@ -432,7 +434,7 @@ var Square = React.createClass({
 											});
 		return (
 			<div>
-				<span>this.props.id</span>
+				<span>Square points</span>
 				<ul>
 					{ pointListElements }
 				</ul>

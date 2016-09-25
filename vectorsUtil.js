@@ -14,6 +14,79 @@ class vectorsUtil extends EventEmitter {
 		this.eqLengthVectors = new Array();
 		this.processes = config.parallelProcesses;
 		this.bufferFilePath = './tmp/workerOutput';//must implement
+		var self = this;
+	}
+
+	doEverything(inArray){
+		var chunkSize = Math.round((inArray.length) / this.processes)
+			,chunkCntr = 0
+			,chunkStart = 0
+			,chunkEnd = inArray.length
+			,i = 0
+			,pointsProcessed = -1 ////slice doesn't include "end" index...
+			,workers = new Array
+			,workersDone = 0;
+			;
+		
+		var start = new Date().getTime();	
+			
+		for (var i = this.processes-1; i >= 0; i--) {
+			var worker = cp.fork('./prepWorker');	
+			workers[i] = worker;
+		};
+		
+		workers.map(function( worker, i ){
+			worker.on('message' ,function(m){
+				switch(m.type){
+					case 'init'://Initialization done, start feeding process
+						workers[m.id].send({type:'calc', inArray: getPoints()});
+						break;
+					case 'calc'://give next chunk
+						if(inArray.length>pointsProcessed){
+							workers[m.id].send({type:'calc', inArray: getPoints()});
+						}else{
+							workers[m.id].send({type:'sort'});
+						}
+						break;
+					case 'sort'://thank you and good bye
+						workers[m.id].send({type:'exit'});
+						mergeBuffers(function(){
+							this.loadPoints();
+						}.bind(this));
+						break;
+					default:
+						console.log('UNSUPPORTED message');
+						process.exit();
+				}
+			}.bind(this));
+			worker.send({ type:'init', id: i, bufferFilePath: this.bufferFilePath+i });
+		},this);
+		
+		function getPoints(){
+			pointsProcessed++;
+			//console.log('pointsProcessed %d', pointsProcessed);
+			return inArray.slice(0,inArray.length-pointsProcessed);//slice doesn't include "end" index...
+		}
+
+		function mergeBuffers(cb){
+			workersDone++;
+			if(workersDone == workers.length){
+				console.log('sort done good to go');	
+				let mergedFd = fs.openSync('./tmp/sortedOutput', 'w');
+				let mergeProc = cp.spawn('sort', ['-m', '-n', '-k1,1', 'tmp/sortedOutput0', 'tmp/sortedOutput1', 'tmp/sortedOutput2'], {stdio: ['pipe', mergedFd, 'pipe']});
+				mergeProc.on('close', (code) => {
+					  if (code !== 0) {
+					    console.log(`mergeProc process exited with code ${code}`);
+					  }else{
+					  	fs.unlinkSync('tmp/sortedOutput0');
+					  	fs.unlinkSync('tmp/sortedOutput1');
+					  	fs.unlinkSync('tmp/sortedOutput2');
+					  	console.log('mergeProc done. total time elapsed: %d', new Date().getTime() - start);
+					  	cb();
+					  }
+					});
+			}
+		};
 	}
 	
 	loadPoints(){
@@ -23,6 +96,9 @@ class vectorsUtil extends EventEmitter {
 			,lastVector = ['','','','']
 			,lineReader = readline.createInterface({input: fs.createReadStream('./tmp/sortedOutput', 'ascii')})
 			;
+		lineReader.once('close', ()=>{
+			this.emit('finish');
+		});
 		//Read vectors buffer file sorted by length.
 		lineReader.on('line', function (lineContent) {
 			lineCntr++;
@@ -35,7 +111,8 @@ class vectorsUtil extends EventEmitter {
 					this.eqLengthVectors.push({ p1 : lastVector[2], p2 : lastVector[3] });
 
 					if(this.eqLengthVectors.length > 3){//TODO easy to add 4-th point recommendation
-						this.emit('eqLengthVectorsFound', this.eqLengthVectors);
+						//this.emit('eqLengthVectorsFound', this.eqLengthVectors);
+						this.findRectangles(this.eqLengthVectors);
 					}
 					this.eqLengthVectors = new Array();
 				}
@@ -53,7 +130,7 @@ class vectorsUtil extends EventEmitter {
 	findRectangles(vectorArrays){
 		//console.log(vectorArrays);
 		//TODO: possible memory eating Godzilla, implement "file buffering"
-		console.log('vectorArrays', vectorArrays);
+		//console.log('vectorArrays', vectorArrays);
 		let connectedVectors = new Array();
 		for(let i=vectorArrays.length-1; i>=0; i--){
 			for (let j = i - 1; j >= 0; j--) {
@@ -62,7 +139,7 @@ class vectorsUtil extends EventEmitter {
 				}
 			};
 		}
-		console.log('connectedVectors', connectedVectors);
+		//console.log('connectedVectors', connectedVectors);
 		if(connectedVectors.length > 2){
 			for (let i = connectedVectors.length - 1; i >= 0; i--) {
 				for (let j = i - 1; j >= 0; j--) {

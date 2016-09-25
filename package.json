@@ -8,7 +8,8 @@
   "dependencies": {
     "body-parser": "^1.4.3",
     "connect-busboy": "^0.0.2",
-    "express": "^4.4.5"
+    "express": "^4.4.5",
+    "ws": "^1.1.1"
   },
   "devDependencies": {},
   "scripts": {
@@ -23,7 +24,7 @@
     "url": "https://github.com/mindaugaszel/squarePoints/issues"
   },
   "homepage": "https://github.com/mindaugaszel/squarePoints",
-  "engines" : {
-    "node" : "4.5.0"
+  "engines": {
+    "node": "4.5.0"
   }
 }
