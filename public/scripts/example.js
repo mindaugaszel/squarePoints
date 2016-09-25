@@ -20,10 +20,14 @@ var App = React.createClass({
 		this.pointsBox.loadCurrentPoints();
 	},
 	render: function() {
+		const style = {
+			width: '900px',
+			display: 'table'
+		};
 		return (
-			<div>
-				<PointsContainer url="/api/points" ref={reference => this.pointsBox = reference}/>
+			<div style={style}>
 				<StoredListsContainer url="/api/lists" onStoredListLoad={this.handleStoredListLoad}/>
+				<PointsContainer url="/api/points" ref={reference => this.pointsBox = reference}/>
 				<SquaresContainer />
 			</div>
 		);
@@ -112,9 +116,13 @@ var StoredListsContainer = React.createClass({
 		});
 	},
 	render: function() {
+		const style = {
+			display: 'table-cell',
+			width: '300px'
+		};
 		return (
-			<div>
-				<h1>Stored Lists</h1>
+			<div style={style}>
+				<h2>Stored Lists</h2>
 				<StoredLists data={this.state.data} onListDelete={this.handleListDelete} onListLoad={this.handleListLoad}/>
 				<StoreListForm onListSave={this.handleListSave}/>
 			</div>
@@ -256,13 +264,17 @@ var PointsContainer = React.createClass({
 		});
 	},
 	render: function() {
+		const style = {
+			display: 'table-cell',
+			width: '300px'
+		}
 		return (
-			<div>
-				<h1>Current Points</h1>
+			<div style={style}>
+				<h2>Current Points</h2>
 				<PointList data={this.state.data} onPointRemove={this.handleRemovePoint}/>
 				<PointsForm onPointSubmit={this.handleSubmitPoint} />
-				<span onClick={this.handleRemoveAllPoints}>Remove All </span>
-				<a href='points/'> Download</a>
+				<a href='#' onClick={this.handleRemoveAllPoints}>Remove All </a>
+				<a href='points/'> Download All</a>
 			</div>
 		);
 	}
@@ -282,7 +294,7 @@ var PointList = React.createClass({
 											}, this);
 		return (
 			<div>
-				<h3>Counter: {this.props.data.length}
+				<h3>Points in List: {this.props.data.length}
 					<a>⇧</a>
 					<a>⇩</a>
 				</h3>
@@ -362,11 +374,30 @@ var SquaresContainer = React.createClass({
 	},
 	loadsquares: function() {
 		console.log('someone would like to find squares');
+		var ws = new WebSocket('ws://localhost:8080/events')//should be global?
+		console.dir(ws);
+		ws.onopen = function(){
+             connection.send("Ping");
+        };
+ 
+        ws.onerror = function(error){
+            console.log(error);
+        };
+        
+        ws.onmessage = function(e){
+             console.log("From server: " + e.data);
+        };
 	},
 	render: function() {
+		const style = {
+			display: 'table-cell',
+			width: '300px'
+		};
 		return (
-			<div>
-				<h1>Counter: {this.state.data.length} </h1>
+			<div style={style}>
+				<h2>Squares</h2>
+				<h3>Squares in list: : {this.state.data.length} </h3>
+				<a href="#" onClick={this.loadsquares}> Find Squares </a>
 				<SquareList data={this.state.data}/>
 			</div>
 		);
@@ -386,7 +417,6 @@ var SquareList = React.createClass({
 				<ul>
 					{ squareListElements }
 				</ul>
-				//paging
 			</div>
 		);
 	}
