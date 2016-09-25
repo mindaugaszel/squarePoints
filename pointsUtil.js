@@ -122,51 +122,68 @@ pointsUtil.prototype.calcVectorLengthsParallel = function(){
 		,chunkStart = 0
 		,chunkEnd = inArray.length
 		,i = 0
-		,pointsProcessed = 0
+		,pointsProcessed = -1 ////slice doesn't include "end" index...
 		,workers = new Array
+		,workersDone = 0;
 		;
-var start = new Date().getTime();
-console.log(inArray.length);
-console.log(chunkSize);
-	function getPoints(){
-		pointsProcessed++;
-		console.log(pointsProcessed)
-		return inArray.slice(0,inArray.length-pointsProcessed);//slice doesn't include "end" index...
-	}
+	
+	var start = new Date().getTime();	
 		
-	for (var i = this.processes; i > 0; i--) {
+	for (var i = this.processes-1; i >= 0; i--) {
 		var worker = cp.fork('./prepWorker');	
 		workers[i] = worker;
 	};
+	
+	workers.map(function( worker, i ){
+		worker.on('message' ,(m)=>{handleMessage(m)});
+		worker.send({ type:'init', id: i, bufferFilePath: this.bufferFilePath+i });
+	},this);
+	
+	function getPoints(){
+		pointsProcessed++;
+		console.log('pointsProcessed %d', pointsProcessed);
+		return inArray.slice(0,inArray.length-pointsProcessed);//slice doesn't include "end" index...
+	}
+
 	function handleMessage(task){
 		switch(task.type){
 			case 'init'://Initialization done, start feeding process
 				workers[task.id].send({type:'calc', inArray: getPoints()});
 				break;
-			case 'calc':
+			case 'calc'://give next chunk
 				if(inArray.length>pointsProcessed){
 					workers[task.id].send({type:'calc', inArray: getPoints()});
 				}else{
 					workers[task.id].send({type:'sort'});
 				}
 				break;
+			case 'sort'://thank you and good bye
+				workers[task.id].send({type:'exit'});
+				mergeBuffers();
+				break;
+			default:
+				console.log('UNSUPPORTED message');
+				process.exit();
 		}
 	}
-
-	for (var i = this.processes; i > 0; i--) {
-		workers[i].on('message', (m)=> {
-			handleMessage(m);
-		});
-	};
-
-	for (var i = this.processes; i > 0; i--) {		
-		workers[i].send({
-			type:'init',
-			id: i,
-			bufferFilePath: this.bufferFilePath+i
-		});
-
-	};
+	function mergeBuffers(){
+		workersDone++;
+		if(workersDone == workers.length){
+			console.log('sort done good to go');	
+			let mergedFd = fs.openSync('./tmp/sortedOutput', 'w');
+			let mergeProc = cp.spawn('sort', ['-m', '-n', '-k1,1', 'tmp/sortedOutput0', 'tmp/sortedOutput1', 'tmp/sortedOutput2'], {stdio: ['pipe', mergedFd, 'pipe']});
+			mergeProc.on('close', (code) => {
+				  if (code !== 0) {
+				    console.log(`mergeProc process exited with code ${code}`);
+				  }else{
+				  	fs.unlinkSync('tmp/sortedOutput0');
+				  	fs.unlinkSync('tmp/sortedOutput1');
+				  	fs.unlinkSync('tmp/sortedOutput2');
+				  	console.log('mergeProc done. total time elapsed: %d', new Date().getTime() - start);
+				  }
+				});
+		}
+	}
 }
 
 module.exports = pointsUtil

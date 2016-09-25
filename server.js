@@ -45,7 +45,7 @@ app.use(function(req, res, next) {
 });
 
 app.get('/squares', function(req, res) {
-	points.calcVectorLengthsParallel(points.get());
+	points.calcVectorLengthsParallel();
 	res.send('OK');//TODO: synchronize sorting in UI
 });
 app.get('/lists/:label', function(req, res) {
@@ -55,7 +55,7 @@ app.get('/lists/:label', function(req, res) {
 
 app.get('/points', function(req, res) {
 	res.attachment('point list.txt');
-	res.send(points.get().join('\n'));					//TODO: synchronize sorting in UI
+	res.send(points.get().join('\n'));
 });
 
 app.post('/points', function(req, res) {
